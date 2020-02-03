@@ -98,32 +98,38 @@ static void sched_ipi_handler(void *unused)
 /**
  * @brief Check whether need to do thread switch in isr context
  *
- * @details u64_t is used to let compiler use (r0, r1) as return register.
- *  use register r0 and register r1 as return value, r0 has
- *  new thread, r1 has old thread. If r0 == 0, it means no thread switch.
+ * @param old, current thread pointer will be saved in old
+ *
+ * @return new thread pointer
+ *
+ * @details in isr, two values are required, the new thread pointer and
+ * old thread pointer, if new thread pointer is not null, a thread switch
+ * is required, old thread pointer will be used to save context; if new
+ * thread pointer is null, no thread switch
  */
-u64_t z_arc_smp_switch_in_isr(void)
+struct k_thread *z_arc_smp_switch_in_isr(struct k_thread **old)
 {
-	u64_t ret = 0;
-	u32_t new_thread;
-	u32_t old_thread;
+	struct k_thread *new_thread, *old_thread;
 
-	old_thread = (u32_t)_current;
+	old_thread = _current;
 
-	new_thread = (u32_t)z_get_next_ready_thread();
+	new_thread = z_get_next_ready_thread();
 
 	if (new_thread != old_thread) {
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice();
 #endif
 		_current_cpu->swap_ok = 0;
-		((struct k_thread *)new_thread)->base.cpu =
-				arch_curr_cpu()->id;
-		_current = (struct k_thread *) new_thread;
-		ret = new_thread | ((u64_t)(old_thread) << 32);
+		new_thread->base.cpu = arch_curr_cpu()->id;
+		_current = new_thread;
+
+	} else {
+		new_thread = NULL;
 	}
 
-	return ret;
+	*old = old_thread;
+
+	return new_thread;
 }
 
 /* arch implementation of sched_ipi */

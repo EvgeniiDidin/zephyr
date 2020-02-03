@@ -269,7 +269,11 @@ SECTION_FUNC(TEXT, _rirq_exit)
 #ifdef CONFIG_PREEMPT_ENABLED
 
 #ifdef CONFIG_SMP
+	/* sp is struct k_thread **old of z_arc_smp_switch_in_isr */
+	push_s r1
+	mov r0, sp
 	bl z_arc_smp_switch_in_isr
+	pop_s r1
 	/* r0 points to new thread, r1 points to old thread */
 	cmp_s r0, 0
 	beq _rirq_no_reschedule
