@@ -113,6 +113,15 @@ struct k_thread *z_arc_smp_switch_in_isr(struct k_thread **old)
 
 	old_thread = _current;
 
+	/* Null out the switch handle, see wait_for_switch() above.
+	 * Note that we set it back to a non-null value if we are not
+	 * switching!  The value itself doesn't matter, because by
+	 * definition _current is running and has no saved state.
+	 */
+	volatile void **shp = (void *)&old_thread->switch_handle;
+
+	*shp = NULL;
+
 	new_thread = z_get_next_ready_thread();
 
 	if (new_thread != old_thread) {
@@ -123,7 +132,15 @@ struct k_thread *z_arc_smp_switch_in_isr(struct k_thread **old)
 		new_thread->base.cpu = arch_curr_cpu()->id;
 		_current = new_thread;
 
+		shp = (void *)&new_thread->switch_handle;
+
+		/* see kwap.h's wait_for_switch() */
+		while (*shp == NULL) {
+			k_busy_wait(1);
+		}
+
 	} else {
+		*shp = old_thread;
 		new_thread = NULL;
 	}
 

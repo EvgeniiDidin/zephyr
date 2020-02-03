@@ -313,6 +313,10 @@ _rirq_reschedule:
 	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 
 #ifdef CONFIG_SMP
+	/* save old thread into switch handle which is required by
+	 * wait_for_switch
+	 */
+	st r2, [r2, ___thread_t_switch_handle_OFFSET]
 	mov_s r2, r0
 #else
 	/* incoming thread is in r0: it becomes the new 'current' */
