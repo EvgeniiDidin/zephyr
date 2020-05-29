@@ -17,7 +17,8 @@
 #define THREADS_NUM  4
 
 /* Amount of packet headers in a queue */
-#define SIZE_OF_QUEUE 5000
+//#define SIZE_OF_QUEUE 5000
+#define SIZE_OF_QUEUE 5
 
 /* Size of packet header (in bytes) */
 #define SIZE_OF_HEADER 24

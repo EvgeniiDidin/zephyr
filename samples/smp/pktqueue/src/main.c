@@ -166,12 +166,32 @@ void main(void)
 	cycles_spent = stop_time - start_time;
 	nanoseconds_spent = (u32_t)k_cyc_to_ns_floor64(cycles_spent);
 
-  /* Count amount of packages in receiver queues */
-	for (int i = 0; i < QUEUE_NUM; i++)
-		printk("Receiver queue %d contains %d of %d packet headers\n",
-				i, receiver[i].count, SIZE_OF_QUEUE);
-	printk("All %d headers were processed in %d msec\n",
-	SIZE_OF_QUEUE*QUEUE_NUM, nanoseconds_spent / 1000 / 1000);
+	/* Verify result of packet transmission */
+	/* The counter of correct reciever queues */
+	int correct = 0;
+	struct phdr_desc *tmp;
+  /* Iterate and count amount of packages in receiver queues */
+	for (int i = 0; i < QUEUE_NUM; i++) {
+			int count = 0;
+	    tmp = receiver[i].head;
+
+			while (tmp != NULL) {
+				tmp = tmp->next;
+
+				count++;
+			}
+			if (receiver[i].count == SIZE_OF_QUEUE && count == SIZE_OF_QUEUE)
+				correct++;
+	}
+	if (correct == QUEUE_NUM)
+			printk("Application ran successfully. \n"
+				"All %d headers were processed in %d msec\n",
+				SIZE_OF_QUEUE*QUEUE_NUM,
+				nanoseconds_spent / 1000 / 1000);
+		else
+			printk("Application failed. \n"
+				"The amount of packets in receiver queue"
+				"is less than expected");
 
 	k_sleep(K_MSEC(10));
 }
